@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PulsoMD — Mockup de plataforma</title>
+<style>
+  :root{
+    --bg:#0B1410;
+    --surface:#101C17;
+    --surface-2:#152420;
+    --line:#22352D;
+    --text:#E8F2EC;
+    --text-dim:#8FA89D;
+    --vital:#00E5A0;
+    --vital-dim:#0A4F3C;
+    --alert:#FF5D5D;
+    --gold:#D4AF6A;
+    --gold-dim:#3A311F;
+    --radius:14px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter', -apple-system, sans-serif;
+    overflow-x:hidden;
+  }
+  @font-face{
+    font-family:'SpaceG';
+    src:local('Space Grotesk');
+  }
+  body{
+    font-family:'Space Grotesk', 'Inter', sans-serif;
+    min-height:100vh;
+  }
+  .mono{ font-family:'JetBrains Mono','Courier New',monospace; letter-spacing:0.02em; }
+
+  /* ===== Fondo ambiental: red de pulso ===== */
+  #bgPulse{
+    position:fixed; inset:0; z-index:0; opacity:0.5; pointer-events:none;
+  }
+
+  /* ===== Topbar ===== */
+  .topbar{
+    position:sticky; top:0; z-index:50;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 28px;
+    background:rgba(11,20,16,0.88);
+    backdrop-filter: blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .brand{ display:flex; align-items:center; gap:10px; }
+  .brand-mark{ width:30px; height:30px; }
+  .brand-name{ font-size:19px; font-weight:700; letter-spacing:-0.02em; }
+  .brand-name span{ color:var(--vital); }
+  .nav-pills{ display:flex; gap:6px; background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:4px; }
+  .nav-pill{
+    padding:9px 18px; border-radius:999px; font-size:13.5px; font-weight:600;
+    color:var(--text-dim); cursor:pointer; transition:.2s; border:none; background:none;
+    font-family:inherit;
+  }
+  .nav-pill.active{ background:var(--vital); color:#06231a; }
+  .nav-pill:not(.active):hover{ color:var(--text); }
+  .top-right{ display:flex; align-items:center; gap:14px; }
+  .live-chip{
+    display:flex; align-items:center; gap:7px; font-size:12px; color:var(--text-dim);
+    border:1px solid var(--line); padding:7px 12px; border-radius:999px;
+  }
+  .dot-live{ width:7px; height:7px; border-radius:50%; background:var(--vital); box-shadow:0 0 0 0 rgba(0,229,160,.6); animation:livedot 2s infinite; }
+  @keyframes livedot{ 0%{box-shadow:0 0 0 0 rgba(0,229,160,.5);} 70%{box-shadow:0 0 0 7px rgba(0,229,160,0);} 100%{box-shadow:0 0 0 0 rgba(0,229,160,0);} }
+
+  /* ===== Views ===== */
+  .view{ display:none; position:relative; z-index:1; }
+  .view.active{ display:block; animation:fadeUp .35s ease; }
+  @keyframes fadeUp{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+
+  /* ===== HERO / Landing ===== */
+  .hero{
+    padding:64px 28px 40px; max-width:1280px; margin:0 auto;
+    display:grid; grid-template-columns:1.1fr 1fr; gap:56px; align-items:center;
+  }
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--vital);
+    letter-spacing:0.12em; text-transform:uppercase; display:flex; align-items:center; gap:8px;
+  }
+  .eyebrow::before{ content:''; width:18px; height:1px; background:var(--vital); display:inline-block; }
+  .hero h1{
+    font-size:54px; line-height:1.04; font-weight:700; letter-spacing:-0.02em; margin:18px 0 18px;
+  }
+  .hero h1 em{ font-style:normal; color:var(--vital); }
+  .hero p.lead{ color:var(--text-dim); font-size:16.5px; line-height:1.6; max-width:480px; margin-bottom:30px; }
+  .cta-row{ display:flex; gap:12px; flex-wrap:wrap; }
+  .btn{
+    padding:14px 24px; border-radius:10px; font-weight:600; font-size:14.5px;
+    cursor:pointer; border:none; font-family:inherit; transition:.2s; display:inline-flex; align-items:center; gap:8px;
+  }
+  .btn-primary{ background:var(--vital); color:#06231a; }
+  .btn-primary:hover{ background:#2bf0b3; transform:translateY(-1px); }
+  .btn-ghost{ background:transparent; color:var(--text); border:1px solid var(--line); }
+  .btn-ghost:hover{ border-color:var(--vital); color:var(--vital); }
+  .btn-gold{ background:var(--gold); color:#241c0c; }
+  .btn-gold:hover{ background:#e6c585; }
+
+  .stat-row{ display:flex; gap:28px; margin-top:36px; padding-top:24px; border-top:1px solid var(--line); }
+  .stat b{ display:block; font-size:24px; font-family:'JetBrains Mono',monospace; color:var(--text); }
+  .stat span{ font-size:12px; color:var(--text-dim); }
+
+  /* Hero visual: ECG conectando dos avatares */
+  .hero-visual{
+    background:var(--surface); border:1px solid var(--line); border-radius:20px;
+    padding:28px; position:relative; overflow:hidden;
+  }
+  .connect-row{ display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+  .persona-card{
+    background:var(--surface-2); border:1px solid var(--line); border-radius:14px;
+    padding:14px; width:128px; text-align:center;
+  }
+  .persona-avatar{
+    width:52px; height:52px; border-radius:50%; margin:0 auto 8px; display:flex; align-items:center; justify-content:center;
+    font-size:22px; font-weight:700;
+  }
+  .persona-avatar.patient{ background:var(--vital-dim); color:var(--vital); }
+  .persona-avatar.doctor{ background:var(--gold-dim); color:var(--gold); }
+  .persona-card .pname{ font-size:13px; font-weight:600; }
+  .persona-card .prole{ font-size:11px; color:var(--text-dim); margin-top:2px; }
+  .ecg-wrap{ flex:1; height:60px; margin:0 6px; position:relative; }
+  .hero-visual .label-foot{ font-size:11.5px; color:var(--text-dim); text-align:center; margin-top:6px; font-family:'JetBrains Mono',monospace; }
+
+  .panel-mini{ margin-top:18px; background:var(--surface-2); border:1px solid var(--line); border-radius:12px; padding:14px 16px; }
+  .panel-mini h4{ font-size:12px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; margin-bottom:10px; font-weight:600;}
+  .feed-line{ display:flex; justify-content:space-between; font-size:13px; padding:7px 0; border-bottom:1px dashed var(--line); }
+  .feed-line:last-child{ border-bottom:none; }
+  .feed-line .tag{ color:var(--text-dim); font-size:11.5px; }
+  .feed-line .val{ font-family:'JetBrains Mono',monospace; color:var(--vital); }
+
+  /* ===== Section wrapper general ===== */
+  .section{ max-width:1280px; margin:0 auto; padding:40px 28px 80px; }
+  .section-head{ display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:24px; flex-wrap:wrap; gap:14px;}
+  .section-head h2{ font-size:26px; letter-spacing:-0.01em; }
+  .section-head p{ color:var(--text-dim); font-size:14px; margin-top:6px; max-width:520px; }
+
+  /* ===== Cards genéricas ===== */
+  .grid-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
+  .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  .card{
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:22px;
+  }
+  .card h3{ font-size:16px; margin-bottom:6px; }
+  .card p{ color:var(--text-dim); font-size:13.5px; line-height:1.55; }
+  .icon-badge{
+    width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+    background:var(--vital-dim); color:var(--vital); margin-bottom:14px; font-size:18px;
+  }
+
+  /* ===== FLUJO: Registro doctor / paciente (tabs) ===== */
+  .reg-tabs{ display:flex; gap:8px; margin-bottom:22px; }
+  .reg-tab{
+    flex:1; padding:14px; border-radius:12px; border:1px solid var(--line); background:var(--surface);
+    cursor:pointer; text-align:left; transition:.2s;
+  }
+  .reg-tab.sel{ border-color:var(--vital); background:var(--surface-2); }
+  .reg-tab b{ display:block; font-size:14.5px; margin-bottom:3px; }
+  .reg-tab span{ font-size:12px; color:var(--text-dim); }
+
+  .form-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .field{ display:flex; flex-direction:column; gap:6px; }
+  .field label{ font-size:12px; color:var(--text-dim); font-weight:600; }
+  .field input, .field select, .field textarea{
+    background:var(--surface-2); border:1px solid var(--line); border-radius:9px; padding:11px 13px;
+    color:var(--text); font-size:13.5px; font-family:inherit;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{ outline:none; border-color:var(--vital); }
+  .field.full{ grid-column:1/-1; }
+  .chip-select{ display:flex; flex-wrap:wrap; gap:8px; }
+  .chip-opt{
+    padding:8px 14px; border-radius:999px; border:1px solid var(--line); background:var(--surface-2);
+    font-size:12.5px; color:var(--text-dim); cursor:pointer; transition:.2s;
+  }
+  .chip-opt.on{ background:var(--vital-dim); border-color:var(--vital); color:var(--vital); }
+
+  /* ===== Mapa proximidad ===== */
+  .map-shell{
+    background:radial-gradient(circle at 50% 45%, #132520 0%, #0c1813 70%, #0a120e 100%);
+    border:1px solid var(--line); border-radius:18px; position:relative; height:440px; overflow:hidden;
+  }
+  .map-ring{ position:absolute; border:1px solid rgba(0,229,160,0.16); border-radius:50%; top:50%; left:50%; transform:translate(-50%,-50%); }
+  .map-grid-lines{ position:absolute; inset:0; background-image: linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px); background-size:36px 36px; }
+  .map-me{
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:16px; height:16px; border-radius:50%;
+    background:var(--vital); box-shadow:0 0 0 6px rgba(0,229,160,0.18), 0 0 18px rgba(0,229,160,0.7); z-index:5;
+  }
+  .map-pin{
+    position:absolute; width:40px; height:40px; border-radius:50%; background:var(--surface); border:2px solid var(--gold);
+    display:flex; align-items:center; justify-content:center; font-size:16px; cursor:pointer; transition:.2s; z-index:4;
+    box-shadow:0 4px 14px rgba(0,0,0,0.4);
+  }
+  .map-pin:hover{ transform:scale(1.14); border-color:#fff; }
+  .map-pin.busy{ border-color:var(--text-dim); opacity:0.55; }
+  .map-card{
+    position:absolute; bottom:18px; left:18px; right:18px; background:rgba(16,28,23,0.92); backdrop-filter:blur(6px);
+    border:1px solid var(--line); border-radius:14px; padding:16px; display:flex; gap:14px; align-items:center; z-index:6;
+  }
+  .map-card .ava{ width:46px; height:46px; border-radius:50%; background:var(--gold-dim); color:var(--gold); display:flex; align-items:center; justify-content:center; font-weight:700; }
+  .map-card .mc-info b{ font-size:14.5px; display:block; }
+  .map-card .mc-info span{ font-size:12px; color:var(--text-dim); }
+  .map-legend{ position:absolute; top:16px; left:16px; display:flex; flex-direction:column; gap:8px; font-size:11.5px; color:var(--text-dim); z-index:6; }
+  .map-legend .lg-item{ display:flex; align-items:center; gap:7px; }
+  .lg-dot{ width:9px; height:9px; border-radius:50%; }
+
+  .side-list{ display:flex; flex-direction:column; gap:10px; }
+  .doc-row{
+    display:flex; align-items:center; gap:12px; background:var(--surface); border:1px solid var(--line);
+    border-radius:12px; padding:12px 14px; cursor:pointer; transition:.2s;
+  }
+  .doc-row:hover{ border-color:var(--gold); }
+  .doc-row .ava{ width:42px; height:42px; border-radius:50%; background:var(--gold-dim); color:var(--gold); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; flex-shrink:0; }
+  .doc-row .di b{ font-size:13.5px; display:block; }
+  .doc-row .di span{ font-size:11.5px; color:var(--text-dim); }
+  .doc-row .dist{ margin-left:auto; text-align:right; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--vital); }
+  .doc-row .dist small{ display:block; color:var(--text-dim); font-size:10.5px; font-family:'Space Grotesk',sans-serif; }
+
+  /* ===== Triage / síntomas ===== */
+  .triage-box{ background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:26px; }
+  .triage-chat{ display:flex; flex-direction:column; gap:14px; max-height:340px; overflow-y:auto; padding-right:4px; margin-bottom:18px; }
+  .msg{ max-width:78%; padding:12px 15px; border-radius:14px; font-size:13.5px; line-height:1.5; }
+  .msg.bot{ background:var(--surface-2); border:1px solid var(--line); align-self:flex-start; }
+  .msg.user{ background:var(--vital-dim); border:1px solid #155c45; align-self:flex-end; color:#d6fff0; }
+  .msg.bot b.label, .msg.user b.label{ display:block; font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-dim); margin-bottom:4px; font-weight:600; }
+  .symptom-chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  .triage-input{ display:flex; gap:10px; }
+  .triage-input input{ flex:1; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:13px 16px; color:var(--text); font-family:inherit; }
+  .triage-input input:focus{ outline:none; border-color:var(--vital); }
+
+  .urgency-band{ display:flex; gap:10px; margin-top:18px; }
+  .urg-pill{ flex:1; text-align:center; padding:10px; border-radius:10px; font-size:12px; font-weight:700; border:1px solid var(--line); color:var(--text-dim); }
+  .urg-pill.lvl1{ background:var(--vital-dim); border-color:var(--vital); color:var(--vital); }
+
+  /* ===== Historial clínico ===== */
+  .timeline{ position:relative; padding-left:26px; }
+  .timeline::before{ content:''; position:absolute; left:6px; top:6px; bottom:6px; width:1px; background:var(--line); }
+  .t-item{ position:relative; margin-bottom:22px; }
+  .t-item::before{ content:''; position:absolute; left:-26px; top:3px; width:11px; height:11px; border-radius:50%; background:var(--vital); border:2px solid var(--bg); }
+  .t-item .t-date{ font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-dim); }
+  .t-item h4{ font-size:14.5px; margin:4px 0 4px; }
+  .t-item p{ font-size:13px; color:var(--text-dim); }
+  .t-item .t-doc{ font-size:11.5px; color:var(--gold); margin-top:4px; }
+
+  .vital-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:24px; }
+  .vital-card{ background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px; text-align:center; }
+  .vital-card .vv{ font-size:22px; font-family:'JetBrains Mono',monospace; color:var(--vital); }
+  .vital-card .vl{ font-size:11px; color:var(--text-dim); margin-top:4px; }
+
+  /* ===== Perfil doctor / experiencia ===== */
+  .doc-profile-head{ display:flex; gap:22px; align-items:center; margin-bottom:26px; }
+  .doc-profile-head .ava-xl{ width:84px; height:84px; border-radius:22px; background:var(--gold-dim); color:var(--gold); display:flex; align-items:center; justify-content:center; font-size:30px; font-weight:700; flex-shrink:0; }
+  .doc-profile-head h2{ font-size:24px; }
+  .doc-profile-head .spec{ color:var(--gold); font-size:13.5px; margin-top:3px; font-weight:600; }
+  .doc-profile-head .meta-row{ display:flex; gap:18px; margin-top:10px; font-size:12.5px; color:var(--text-dim); }
+
+  .exp-bar-wrap{ margin-bottom:16px; }
+  .exp-bar-label{ display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:6px; }
+  .exp-bar-label b{ color:var(--text); font-weight:600; }
+  .exp-bar-track{ height:8px; background:var(--surface-2); border-radius:99px; overflow:hidden; border:1px solid var(--line); }
+  .exp-bar-fill{ height:100%; background:linear-gradient(90deg, var(--gold-dim), var(--gold)); border-radius:99px; }
+
+  .hours-counter{ display:flex; align-items:baseline; gap:8px; }
+  .hours-counter .num{ font-family:'JetBrains Mono',monospace; font-size:42px; color:var(--gold); font-weight:700; }
+  .hours-counter .unit{ font-size:13px; color:var(--text-dim); }
+
+  .badge-row{ display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+  .badge{ padding:7px 13px; border-radius:999px; background:var(--surface-2); border:1px solid var(--line); font-size:11.5px; color:var(--text-dim); display:flex; align-items:center; gap:6px; }
+  .badge.gold{ border-color:var(--gold); color:var(--gold); }
+
+  /* ===== Consulta en vivo (dos vías) ===== */
+  .live-call{ display:grid; grid-template-columns:1fr 320px; gap:18px; }
+  .call-stage{ background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:22px; min-height:480px; display:flex; flex-direction:column; }
+  .call-top{ display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
+  .call-timer{ font-family:'JetBrains Mono',monospace; color:var(--alert); font-size:13px; display:flex; align-items:center; gap:6px; }
+  .call-views{ flex:1; display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .call-feed{
+    background:var(--surface-2); border:1px solid var(--line); border-radius:14px; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:10px; position:relative; overflow:hidden;
+  }
+  .call-feed .ava-xl2{ width:72px; height:72px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:26px; font-weight:700; }
+  .call-feed.you .ava-xl2{ background:var(--vital-dim); color:var(--vital); }
+  .call-feed.doc .ava-xl2{ background:var(--gold-dim); color:var(--gold); }
+  .call-feed .cf-name{ font-size:13px; font-weight:600; }
+  .call-feed .cf-role{ font-size:11px; color:var(--text-dim); }
+  .call-tag{ position:absolute; top:10px; left:10px; font-size:10.5px; background:rgba(0,0,0,0.4); padding:4px 9px; border-radius:6px; color:var(--text-dim); }
+  .call-controls{ display:flex; justify-content:center; gap:12px; margin-top:18px; }
+  .ctl-btn{ width:48px; height:48px; border-radius:50%; background:var(--surface-2); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:17px; color:var(--text); }
+  .ctl-btn.end{ background:var(--alert); border-color:var(--alert); }
+  .ctl-btn:hover{ border-color:var(--vital); }
+
+  .ctx-panel{ background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:18px; display:flex; flex-direction:column; gap:16px; }
+  .ctx-panel h4{ font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-dim); margin-bottom:8px; }
+  .ctx-block{ background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:12px; font-size:12.5px; color:var(--text-dim); line-height:1.6; }
+  .ctx-block b{ color:var(--text); }
+
+  /* ===== Footer nav mobile-ish desktop tab bar for role switch ===== */
+  .role-switch{
+    position:fixed; bottom:22px; left:50%; transform:translateX(-50%); z-index:60;
+    background:rgba(16,28,23,0.95); backdrop-filter:blur(10px); border:1px solid var(--line); border-radius:999px;
+    padding:6px; display:flex; gap:4px; box-shadow:0 10px 30px rgba(0,0,0,0.5);
+  }
+  .role-btn{ padding:10px 20px; border-radius:999px; border:none; background:none; color:var(--text-dim); font-family:inherit; font-size:13px; font-weight:600; cursor:pointer; transition:.2s; }
+  .role-btn.on{ background:var(--vital); color:#06231a; }
+
+  ::-webkit-scrollbar{ width:7px; }
+  ::-webkit-scrollbar-thumb{ background:var(--line); border-radius:99px; }
+
+  footer.bottom-pad{ height:90px; }
+
+  @media (max-width:980px){
+    .hero{ grid-template-columns:1fr; }
+    .grid-3, .grid-2, .live-call, .form-grid, .vital-grid{ grid-template-columns:1fr; }
+    .call-views{ grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+
+<svg id="bgPulse" width="100%" height="100%">
+  <defs>
+    <linearGradient id="fadeGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#00E5A0" stop-opacity="0"/>
+      <stop offset="50%" stop-color="#00E5A0" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#00E5A0" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<!-- ===================== TOPBAR ===================== -->
+<div class="topbar">
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="16" r="15" stroke="#00E5A0" stroke-width="1.5"/>
+      <path d="M4 16H10L13 8L19 24L22 16H28" stroke="#00E5A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div class="brand-name">Pulso<span>MD</span></div>
+  </div>
+  <div class="nav-pills" id="navPills">
+    <button class="nav-pill active" data-view="landing">Inicio</button>
+    <button class="nav-pill" data-view="registro">Matrícula</button>
+    <button class="nav-pill" data-view="paciente">App Paciente</button>
+    <button class="nav-pill" data-view="doctor">App Doctor</button>
+    <button class="nav-pill" data-view="consulta">Consulta en vivo</button>
+  </div>
+  <div class="top-right">
+    <div class="live-chip"><span class="dot-live"></span> 1,248 doctores activos ahora</div>
+  </div>
+</div>
+
+<!-- ===================== LANDING ===================== -->
+<section class="view active" id="view-landing">
+  <div class="hero">
+    <div>
+      <div class="eyebrow">Salud bajo demanda</div>
+      <h1>Un doctor cerca,<br>en el tiempo que tardas<br>en pedir un <em>taxi</em>.</h1>
+      <p class="lead">PulsoMD conecta a pacientes con médicos verificados en minutos. Cuenta tus síntomas, te asignamos al doctor más cercano y con la experiencia adecuada, y él llega con tu historia clínica ya en pantalla.</p>
+      <div class="cta-row">
+        <button class="btn btn-primary" data-goto="paciente">Necesito un doctor →</button>
+        <button class="btn btn-gold" data-goto="registro">Soy médico, quiero matricularme</button>
+      </div>
+      <div class="stat-row">
+        <div class="stat"><b>03:40</b><span>tiempo prom. de respuesta</span></div>
+        <div class="stat"><b>6,512</b><span>doctores matriculados</span></div>
+        <div class="stat"><b>4.9</b><span>calificación promedio</span></div>
+      </div>
+    </div>
+
+    <div class="hero-visual">
+      <div class="connect-row">
+        <div class="persona-card">
+          <div class="persona-avatar patient">MJ</div>
+          <div class="pname">María J.</div>
+          <div class="prole">Paciente · a 1.4 km</div>
+        </div>
+        <div class="ecg-wrap"><svg viewBox="0 0 200 60" width="100%" height="100%" preserveAspectRatio="none">
+          <path id="ecgHero" d="M0,30 L20,30 L28,10 L36,50 L44,30 L70,30 L78,30 L86,12 L94,48 L102,30 L200,30" fill="none" stroke="#00E5A0" stroke-width="2" stroke-linecap="round"/>
+        </svg></div>
+        <div class="persona-card">
+          <div class="persona-avatar doctor">DR</div>
+          <div class="pname">Dr. Restrepo</div>
+          <div class="prole">Medicina interna · 14 años</div>
+        </div>
+      </div>
+      <div class="label-foot">CONEXIÓN EN VIVO · HISTORIA CLÍNICA SINCRONIZADA</div>
+
+      <div class="panel-mini">
+        <h4>Lo que el doctor ve al conectarse</h4>
+        <div class="feed-line"><span class="tag">Motivo de consulta</span><span class="val">Dolor torácico leve</span></div>
+        <div class="feed-line"><span class="tag">Antecedentes relevantes</span><span class="val">Hipertensión (2021)</span></div>
+        <div class="feed-line"><span class="tag">Última consulta</span><span class="val">hace 38 días</span></div>
+        <div class="feed-line"><span class="tag">Match por experiencia</span><span class="val">Cardiología · 96%</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <h2>Cómo funciona el círculo de atención</h2>
+      <p>Tres motores trabajan juntos cada vez que alguien abre la app con un síntoma.</p>
+    </div>
+    <div class="grid-3">
+      <div class="card">
+        <div class="icon-badge">📋</div>
+        <h3>Historia clínica viva</h3>
+        <p>Cada síntoma que describes se compara contra tu historial: diagnósticos previos, alergias, medicamentos y consultas anteriores, para que nunca repitas tu historia desde cero.</p>
+      </div>
+      <div class="card">
+        <div class="icon-badge">🩺</div>
+        <h3>Horas de vuelo del doctor</h3>
+        <p>Cada médico acumula horas de consulta certificadas y casos resueltos por especialidad. El sistema te conecta con quien más experiencia real tiene en tu síntoma específico.</p>
+      </div>
+      <div class="card">
+        <div class="icon-badge">📍</div>
+        <h3>Proximidad de dos vías</h3>
+        <p>El paciente ve doctores disponibles cerca; el doctor ve pacientes esperando cerca. Ambos aceptan o rechazan: nadie queda asignado a ciegas.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== REGISTRO ===================== -->
+<section class="view" id="view-registro">
+  <div class="section" style="padding-top:48px;">
+    <div class="section-head">
+      <h2>Matrícula en PulsoMD</h2>
+      <p>El mismo formulario inicial, dos caminos distintos. Elige qué tipo de cuenta vas a crear.</p>
+    </div>
+
+    <div class="reg-tabs">
+      <div class="reg-tab sel" id="regTabPatient" onclick="selectRegTab('patient')">
+        <b>👤 Soy paciente</b>
+        <span>Quiero consultar síntomas y crear mi historia clínica</span>
+      </div>
+      <div class="reg-tab" id="regTabDoctor" onclick="selectRegTab('doctor')">
+        <b>🩺 Soy médico</b>
+        <span>Quiero ofrecer consultas y validar mi experiencia</span>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card" id="regFormCard">
+        <h3 id="regFormTitle" style="margin-bottom:16px;">Datos del paciente</h3>
+        <div class="form-grid" id="regFormFields">
+          <div class="field"><label>Nombre completo</label><input placeholder="María José Gómez" value="María José Gómez"></div>
+          <div class="field"><label>Documento de identidad</label><input placeholder="CC 1.234.567.890" value="CC 43.876.221"></div>
+          <div class="field"><label>Fecha de nacimiento</label><input type="date" value="1991-04-12"></div>
+          <div class="field"><label>Ciudad</label><input placeholder="Itagüí, Antioquia" value="Itagüí, Antioquia"></div>
+          <div class="field full"><label>Tipo de sangre</label>
+            <div class="chip-select">
+              <div class="chip-opt on">O+</div><div class="chip-opt">A+</div><div class="chip-opt">A-</div><div class="chip-opt">B+</div><div class="chip-opt">AB+</div>
+            </div>
+          </div>
+          <div class="field full"><label>Condiciones preexistentes</label><textarea rows="2">Hipertensión controlada desde 2021. Sin alergias conocidas.</textarea></div>
+        </div>
+        <button class="btn btn-primary" style="margin-top:18px; width:100%; justify-content:center;" onclick="goto('paciente')">Crear cuenta de paciente →</button>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-bottom:16px;">Vista previa de tu perfil</h3>
+        <div class="doc-profile-head" style="margin-bottom:18px;">
+          <div class="ava-xl">MJ</div>
+          <div>
+            <h2 style="font-size:19px;">María José Gómez</h2>
+            <div class="spec" style="color:var(--vital);">Paciente verificado</div>
+            <div class="meta-row"><span>33 años</span><span>O+</span><span>Itagüí</span></div>
+          </div>
+        </div>
+        <div class="panel-mini">
+          <h4>Esto verán los doctores al aceptar tu consulta</h4>
+          <div class="feed-line"><span class="tag">Historial</span><span class="val">3 consultas registradas</span></div>
+          <div class="feed-line"><span class="tag">Alergias</span><span class="val">Ninguna</span></div>
+          <div class="feed-line"><span class="tag">Medicación actual</span><span class="val">Losartán 50mg</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Formulario doctor (oculto por defecto) -->
+    <div class="grid-2" id="regDoctorBlock" style="display:none; margin-top:18px;">
+      <div class="card">
+        <h3 style="margin-bottom:16px;">Datos del médico</h3>
+        <div class="form-grid">
+          <div class="field"><label>Nombre completo</label><input value="Dr. Andrés Restrepo"></div>
+          <div class="field"><label>Registro médico (RETHUS)</label><input value="RM-887234-AN"></div>
+          <div class="field"><label>Especialidad principal</label><input value="Medicina interna"></div>
+          <div class="field"><label>Años de experiencia</label><input value="14 años"></div>
+          <div class="field full"><label>Subespecialidades</label>
+            <div class="chip-select">
+              <div class="chip-opt on">Cardiología</div><div class="chip-opt on">Geriatría</div><div class="chip-opt">Endocrinología</div><div class="chip-opt">Pediatría</div>
+            </div>
+          </div>
+          <div class="field full"><label>Documentos de soporte</label>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              <span class="badge gold">📄 Diploma — verificado</span>
+              <span class="badge gold">📄 Tarjeta profesional — verificado</span>
+              <span class="badge">📄 Certificado de antecedentes — pendiente</span>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-gold" style="margin-top:18px; width:100%; justify-content:center;" onclick="goto('doctor')">Enviar a validación →</button>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom:16px;">Tu nivel de experiencia se calcula así</h3>
+        <div class="exp-bar-wrap">
+          <div class="exp-bar-label"><span>Horas de consulta certificadas</span><b>22,480 hrs</b></div>
+          <div class="exp-bar-track"><div class="exp-bar-fill" style="width:88%;"></div></div>
+        </div>
+        <div class="exp-bar-wrap">
+          <div class="exp-bar-label"><span>Casos resueltos en cardiología</span><b>1,204 casos</b></div>
+          <div class="exp-bar-track"><div class="exp-bar-fill" style="width:74%;"></div></div>
+        </div>
+        <div class="exp-bar-wrap">
+          <div class="exp-bar-label"><span>Calificación de pacientes</span><b>4.9 / 5</b></div>
+          <div class="exp-bar-track"><div class="exp-bar-fill" style="width:97%;"></div></div>
+        </div>
+        <p style="font-size:12.5px; color:var(--text-dim); margin-top:14px;">Este puntaje determina qué tan arriba apareces cuando un paciente con síntomas de tu especialidad busca ayuda cerca de su ubicación.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== APP PACIENTE ===================== -->
+<section class="view" id="view-paciente">
+  <div class="section" style="padding-top:40px;">
+
+    <div class="section-head">
+      <h2>Hola, María 👋</h2>
+      <p>Cuéntanos qué sientes. Cruzamos tu síntoma con tu historia clínica y con doctores cerca de ti.</p>
+    </div>
+
+    <div class="grid-2" style="margin-bottom:26px; align-items:start;">
+      <!-- Triage chat -->
+      <div class="triage-box">
+        <h4 style="font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-dim); margin-bottom:14px;">Asistente de síntomas</h4>
+        <div class="triage-chat">
+          <div class="msg bot"><b class="label">PulsoMD</b>¿Qué síntoma principal estás sintiendo hoy?</div>
+          <div class="msg user"><b class="label">Tú</b>Tengo un dolor en el pecho desde hace 2 horas, leve pero constante.</div>
+          <div class="msg bot"><b class="label">PulsoMD</b>Entendido. Revisé tu historia clínica: tienes hipertensión registrada desde 2021. ¿El dolor empeora al respirar profundo o al moverte?</div>
+          <div class="msg user"><b class="label">Tú</b>Un poco al respirar profundo, no al moverme.</div>
+          <div class="msg bot">
+            <b class="label">PulsoMD</b>
+            Gracias. Con tu antecedente de hipertensión, esto se prioriza como atención temprana, no emergencia. Te estoy asignando con un especialista en cardiología cercano.
+            <div class="symptom-chips">
+              <span class="chip-opt on">Dolor torácico</span>
+              <span class="chip-opt on">Antecedente: hipertensión</span>
+              <span class="chip-opt">Sin dificultad respiratoria</span>
+            </div>
+          </div>
+        </div>
+        <div class="triage-input">
+          <input placeholder="Describe cómo te sientes...">
+          <button class="btn btn-primary">Enviar</button>
+        </div>
+        <div class="urgency-band">
+          <div class="urg-pill lvl1">Atención temprana</div>
+          <div class="urg-pill">Urgente</div>
+          <div class="urg-pill">Emergencia — línea 911</div>
+        </div>
+      </div>
+
+      <!-- Mapa de doctores cerca -->
+      <div>
+        <div class="map-shell">
+          <div class="map-grid-lines"></div>
+          <div class="map-ring" style="width:120px; height:120px;"></div>
+          <div class="map-ring" style="width:240px; height:240px;"></div>
+          <div class="map-ring" style="width:360px; height:360px;"></div>
+          <div class="map-legend">
+            <div class="lg-item"><span class="lg-dot" style="background:var(--vital);"></span> Tu ubicación</div>
+            <div class="lg-item"><span class="lg-dot" style="background:var(--gold); border:1px solid var(--gold);"></span> Doctores disponibles</div>
+          </div>
+          <div class="map-me"></div>
+          <div class="map-pin" style="top:28%; left:32%;" onclick="selectDoctorPin(this,'Dr. Restrepo')">🩺</div>
+          <div class="map-pin" style="top:62%; left:70%;" onclick="selectDoctorPin(this,'Dra. Valencia')">🩺</div>
+          <div class="map-pin busy" style="top:20%; left:74%;">🩺</div>
+          <div class="map-pin" style="top:74%; left:30%;" onclick="selectDoctorPin(this,'Dr. Mejía')">🩺</div>
+          <div class="map-card" id="mapCardInfo">
+            <div class="ava">DR</div>
+            <div class="mc-info">
+              <b>Dr. Andrés Restrepo</b>
+              <span>Cardiología · 14 años · a 1.4 km · llega en ~4 min</span>
+            </div>
+            <button class="btn btn-primary" style="margin-left:auto;" onclick="goto('consulta')">Solicitar →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Doctores recomendados por experiencia -->
+    <div class="section-head" style="margin-top:6px;">
+      <h2 style="font-size:20px;">Doctores recomendados para tu síntoma</h2>
+      <p>Ordenados por experiencia en cardiología y cercanía a tu ubicación.</p>
+    </div>
+    <div class="grid-3" style="margin-bottom:30px;">
+      <div class="doc-row" onclick="goto('consulta')">
+        <div class="ava">AR</div>
+        <div class="di"><b>Dr. Andrés Restrepo</b><span>Cardiología · 22,480 hrs</span></div>
+        <div class="dist">1.4 km<small>~4 min</small></div>
+      </div>
+      <div class="doc-row" onclick="goto('consulta')">
+        <div class="ava">LV</div>
+        <div class="di"><b>Dra. Laura Valencia</b><span>Medicina interna · 15,902 hrs</span></div>
+        <div class="dist">2.1 km<small>~6 min</small></div>
+      </div>
+      <div class="doc-row" onclick="goto('consulta')">
+        <div class="ava">JM</div>
+        <div class="di"><b>Dr. Jorge Mejía</b><span>Cardiología · 11,330 hrs</span></div>
+        <div class="dist">3.0 km<small>~9 min</small></div>
+      </div>
+    </div>
+
+    <!-- Historia clínica -->
+    <div class="section-head">
+      <h2 style="font-size:20px;">Tu historia clínica</h2>
+      <p>Esto es lo que cada doctor consulta antes de atenderte.</p>
+    </div>
+    <div class="vital-grid">
+      <div class="vital-card"><div class="vv">128/82</div><div class="vl">Presión arterial</div></div>
+      <div class="vital-card"><div class="vv">74</div><div class="vl">Pulso (bpm)</div></div>
+      <div class="vital-card"><div class="vv">36.6°</div><div class="vl">Temperatura</div></div>
+      <div class="vital-card"><div class="vv">O+</div><div class="vl">Tipo de sangre</div></div>
+    </div>
+    <div class="card">
+      <div class="timeline">
+        <div class="t-item">
+          <div class="t-date">14 MAY 2026</div>
+          <h4>Control de hipertensión</h4>
+          <p>Ajuste de dosis de Losartán a 50mg. Presión estable, sin síntomas asociados.</p>
+          <div class="t-doc">Atendido por Dra. Laura Valencia</div>
+        </div>
+        <div class="t-item">
+          <div class="t-date">02 FEB 2026</div>
+          <h4>Consulta por migraña</h4>
+          <p>Episodio aislado relacionado con estrés laboral. Se recomendó hidratación y descanso.</p>
+          <div class="t-doc">Atendido por Dr. Jorge Mejía</div>
+        </div>
+        <div class="t-item">
+          <div class="t-date">19 NOV 2025</div>
+          <h4>Diagnóstico de hipertensión</h4>
+          <p>Primer diagnóstico tras episodios de presión elevada sostenida. Inicio de tratamiento.</p>
+          <div class="t-doc">Atendido por Dr. Andrés Restrepo</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== APP DOCTOR ===================== -->
+<section class="view" id="view-doctor">
+  <div class="section" style="padding-top:40px;">
+
+    <div class="doc-profile-head">
+      <div class="ava-xl">AR</div>
+      <div>
+        <h2>Dr. Andrés Restrepo</h2>
+        <div class="spec">Cardiología · Medicina interna</div>
+        <div class="meta-row"><span>14 años de práctica</span><span>RM-887234-AN</span><span>Itagüí, Antioquia</span></div>
+      </div>
+      <div style="margin-left:auto; text-align:right;">
+        <div class="hours-counter"><span class="num">22,480</span><span class="unit">hrs certificadas</span></div>
+        <div class="live-chip" style="margin-top:8px; justify-content:flex-end;"><span class="dot-live"></span> Disponible para consultas</div>
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-bottom:28px;">
+      <!-- Mapa de pacientes cerca -->
+      <div class="map-shell" style="height:380px;">
+        <div class="map-grid-lines"></div>
+        <div class="map-ring" style="width:110px; height:110px;"></div>
+        <div class="map-ring" style="width:220px; height:220px;"></div>
+        <div class="map-ring" style="width:330px; height:330px;"></div>
+        <div class="map-legend">
+          <div class="lg-item"><span class="lg-dot" style="background:var(--gold);"></span> Tu ubicación</div>
+          <div class="lg-item"><span class="lg-dot" style="background:var(--vital); border:1px solid var(--vital);"></span> Pacientes esperando</div>
+        </div>
+        <div class="map-me" style="background:var(--gold); box-shadow:0 0 0 6px rgba(212,175,106,0.18), 0 0 18px rgba(212,175,106,0.7);"></div>
+        <div class="map-pin" style="top:30%; left:30%; border-color:var(--vital);" onclick="selectPatientPin(this,'María José Gómez')">🧍</div>
+        <div class="map-pin" style="top:66%; left:66%; border-color:var(--vital);" onclick="selectPatientPin(this,'Carlos Ibáñez')">🧍</div>
+        <div class="map-pin busy" style="top:22%; left:70%;">🧍</div>
+        <div class="map-card" id="mapCardPatient">
+          <div class="ava">MJ</div>
+          <div class="mc-info">
+            <b>María José Gómez</b>
+            <span>Dolor torácico leve · prioridad temprana · a 1.4 km</span>
+          </div>
+          <button class="btn btn-gold" style="margin-left:auto;" onclick="goto('consulta')">Aceptar caso →</button>
+        </div>
+      </div>
+
+      <!-- Cola de solicitudes -->
+      <div class="card">
+        <h3 style="margin-bottom:14px;">Solicitudes entrantes</h3>
+        <div class="side-list">
+          <div class="doc-row" onclick="goto('consulta')">
+            <div class="ava" style="background:var(--vital-dim); color:var(--vital);">MJ</div>
+            <div class="di"><b>María José Gómez</b><span>Dolor torácico · hipertensión registrada</span></div>
+            <div class="dist">1.4 km<small>prioridad</small></div>
+          </div>
+          <div class="doc-row" onclick="goto('consulta')">
+            <div class="ava" style="background:var(--vital-dim); color:var(--vital);">CI</div>
+            <div class="di"><b>Carlos Ibáñez</b><span>Fiebre y malestar general</span></div>
+            <div class="dist">2.3 km<small>estándar</small></div>
+          </div>
+          <div class="doc-row">
+            <div class="ava" style="background:var(--vital-dim); color:var(--vital);">SP</div>
+            <div class="di"><b>Sara Pineda</b><span>Control de rutina, diabetes tipo 2</span></div>
+            <div class="dist">3.8 km<small>programada</small></div>
+          </div>
+        </div>
+        <h3 style="margin:20px 0 14px;">Tu experiencia por especialidad</h3>
+        <div class="exp-bar-wrap">
+          <div class="exp-bar-label"><span>Cardiología</span><b>1,204 casos</b></div>
+          <div class="exp-bar-track"><div class="exp-bar-fill" style="width:88%;"></div></div>
+        </div>
+        <div class="exp-bar-wrap">
+          <div class="exp-bar-label"><span>Medicina interna</span><b>980 casos</b></div>
+          <div class="exp-bar-track"><div class="exp-bar-fill" style="width:70%;"></div></div>
+        </div>
+        <div class="badge-row">
+          <span class="badge gold">⭐ 4.9 / 5</span>
+          <span class="badge">🏅 Top 5% en cardiología</span>
+          <span class="badge">🕒 Responde en &lt;3 min</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vista de historia clínica desde el lado doctor -->
+    <div class="section-head">
+      <h2 style="font-size:20px;">Expediente — María José Gómez</h2>
+      <p>Vista que recibes automáticamente al aceptar una solicitud.</p>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h3 style="margin-bottom:12px;">Resumen clínico</h3>
+        <div class="panel-mini" style="background:var(--surface);">
+          <div class="feed-line"><span class="tag">Edad / sexo</span><span class="val">33 años · F</span></div>
+          <div class="feed-line"><span class="tag">Tipo de sangre</span><span class="val">O+</span></div>
+          <div class="feed-line"><span class="tag">Condiciones</span><span class="val">Hipertensión (2021)</span></div>
+          <div class="feed-line"><span class="tag">Medicación actual</span><span class="val">Losartán 50mg</span></div>
+          <div class="feed-line"><span class="tag">Alergias</span><span class="val">Ninguna registrada</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom:12px;">Motivo de esta consulta</h3>
+        <p style="color:var(--text); font-size:13.5px; line-height:1.6;">Dolor torácico leve y constante, iniciado hace 2 horas. Empeora levemente con respiración profunda. Sin dificultad respiratoria. Clasificado por el triage como <b style="color:var(--vital);">atención temprana</b> debido al antecedente de hipertensión.</p>
+        <button class="btn btn-gold" style="margin-top:16px;" onclick="goto('consulta')">Iniciar consulta en vivo →</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== CONSULTA EN VIVO ===================== -->
+<section class="view" id="view-consulta">
+  <div class="section" style="padding-top:40px;">
+    <div class="section-head">
+      <h2>Consulta en vivo</h2>
+      <p>Canal de dos vías: paciente y doctor comparten video, contexto clínico y notas en tiempo real.</p>
+    </div>
+
+    <div class="live-call">
+      <div class="call-stage">
+        <div class="call-top">
+          <div class="live-chip"><span class="dot-live"></span> Consulta activa</div>
+          <div class="call-timer">⏱ 04:12</div>
+        </div>
+        <div class="call-views">
+          <div class="call-feed you">
+            <span class="call-tag">Tú · María José</span>
+            <div class="ava-xl2">MJ</div>
+            <div class="cf-name">María José Gómez</div>
+            <div class="cf-role">Paciente</div>
+          </div>
+          <div class="call-feed doc">
+            <span class="call-tag">Dr. Andrés Restrepo</span>
+            <div class="ava-xl2">AR</div>
+            <div class="cf-name">Dr. Andrés Restrepo</div>
+            <div class="cf-role">Cardiología · 14 años</div>
+          </div>
+        </div>
+        <div class="call-controls">
+          <div class="ctl-btn">🎤</div>
+          <div class="ctl-btn">📷</div>
+          <div class="ctl-btn">💬</div>
+          <div class="ctl-btn end">⏹</div>
+        </div>
+      </div>
+
+      <div class="ctx-panel">
+        <div>
+          <h4>Contexto clínico compartido</h4>
+          <div class="ctx-block"><b>Motivo:</b> dolor torácico leve, 2h de evolución, agravado al respirar profundo.</div>
+        </div>
+        <div>
+          <h4>Historia clínica del paciente</h4>
+          <div class="ctx-block">Hipertensión desde 2021 · Losartán 50mg · sin alergias · última consulta hace 38 días.</div>
+        </div>
+        <div>
+          <h4>Experiencia del doctor</h4>
+          <div class="ctx-block">22,480 hrs certificadas · 1,204 casos en cardiología · calificación 4.9/5.</div>
+        </div>
+        <div>
+          <h4>Notas en vivo</h4>
+          <div class="ctx-block" style="min-height:60px;">El doctor está escribiendo notas que se guardarán en tu historia clínica al finalizar...</div>
+        </div>
+        <button class="btn btn-primary" style="justify-content:center;">Adjuntar examen o foto</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="bottom-pad"></footer>
+
+<!-- ===================== ROLE SWITCH (atajo demo) ===================== -->
+<div class="role-switch">
+  <button class="role-btn on" data-goto="paciente">Vista Paciente</button>
+  <button class="role-btn" data-goto="doctor">Vista Doctor</button>
+</div>
+
+<script>
+  function goto(viewId){
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-'+viewId).classList.add('active');
+    document.querySelectorAll('.nav-pill').forEach(p=>{
+      p.classList.toggle('active', p.dataset.view===viewId);
+    });
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  document.querySelectorAll('[data-view]').forEach(el=>{
+    el.addEventListener('click', ()=> goto(el.dataset.view));
+  });
+  document.querySelectorAll('[data-goto]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      goto(el.dataset.goto);
+      document.querySelectorAll('.role-btn').forEach(b=>{
+        b.classList.toggle('on', b.dataset.goto===el.dataset.goto);
+      });
+    });
+  });
+
+  function selectRegTab(type){
+    const isPatient = type==='patient';
+    document.getElementById('regTabPatient').classList.toggle('sel', isPatient);
+    document.getElementById('regTabDoctor').classList.toggle('sel', !isPatient);
+    document.getElementById('regFormCard').style.display = isPatient ? 'block' : 'none';
+    document.getElementById('regDoctorBlock').style.display = isPatient ? 'none' : 'grid';
+  }
+
+  function selectDoctorPin(el, name){
+    document.querySelectorAll('#view-paciente .map-pin').forEach(p=>p.style.outline='none');
+    el.style.outline = '2px solid #00E5A0';
+    document.querySelector('#mapCardInfo b').textContent = name.includes('Dr.')||name.includes('Dra.') ? name : 'Dr. '+name;
+  }
+  function selectPatientPin(el, name){
+    document.querySelectorAll('#view-doctor .map-pin').forEach(p=>p.style.outline='none');
+    el.style.outline = '2px solid #00E5A0';
+    document.querySelector('#mapCardPatient b').textContent = name;
+  }
+
+  // Chip toggles (registro)
+  document.querySelectorAll('.chip-opt').forEach(c=>{
+    c.addEventListener('click', ()=> c.classList.toggle('on'));
+  });
+
+  // Animación ECG ambiental de fondo
+  const svgBg = document.getElementById('bgPulse');
+  function spawnPulseLine(){
+    const y = 80 + Math.random()*(window.innerHeight-160);
+    const line = document.createElementNS('http://www.w3.org/2000/svg','path');
+    const w = window.innerWidth;
+    const d = `M-50,${y} L${w*0.2},${y} L${w*0.23},${y-22} L${w*0.26},${y+30} L${w*0.29},${y} L${w+50},${y}`;
+    line.setAttribute('d', d);
+    line.setAttribute('fill','none');
+    line.setAttribute('stroke','url(#fadeGrad)');
+    line.setAttribute('stroke-width','1.4');
+    svgBg.appendChild(line);
+    line.style.opacity='0';
+    let t=0;
+    const dur = 6000+Math.random()*3000;
+    const start = performance.now();
+    function anim(now){
+      const p = (now-start)/dur;
+      if(p>1){ line.remove(); return; }
+      line.style.opacity = Math.sin(p*Math.PI)*0.8;
+      requestAnimationFrame(anim);
+    }
+    requestAnimationFrame(anim);
+  }
+  setInterval(spawnPulseLine, 1400);
+  for(let i=0;i<4;i++) setTimeout(spawnPulseLine, i*400);
+
+  // Animar latido del ECG del hero
+  const heroEcg = document.getElementById('ecgHero');
+  if(heroEcg){
+    let dash = 400;
+    heroEcg.style.strokeDasharray = dash;
+    heroEcg.style.strokeDashoffset = dash;
+    function pulse(){
+      heroEcg.style.transition='none';
+      heroEcg.style.strokeDashoffset = dash;
+      requestAnimationFrame(()=>{
+        heroEcg.style.transition='stroke-dashoffset 1.4s linear';
+        heroEcg.style.strokeDashoffset = 0;
+      });
+    }
+    pulse();
+    setInterval(pulse, 2200);
+  }
+</script>
+
+</body>
+</html>
